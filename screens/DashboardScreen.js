@@ -7,13 +7,19 @@ import WorshipTracker from '../components/WorshipTracker';
 import RamadhanGoalGraph from '../components/RamadhanGoalGraph';
 import { COLORS } from '../utils/theme'; // Fallback / Static colors
 import { useTheme } from '../utils/ThemeContext'; // Dynamic theme
-import { getData, LAST_READ_KEY } from '../utils/storage';
+import { getData, storeData, LAST_READ_KEY } from '../utils/storage';
 import { Ionicons } from '@expo/vector-icons';
+
+const LOCATION_CACHE_KEY = 'user_location_cache';
+
+import ComingSoonModal from '../components/ComingSoonModal';
 
 export default function DashboardScreen({ navigation }) {
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [comingSoonFeature, setComingSoonFeature] = useState("");
 
     // Theme Hook
     const { isDark, toggleTheme, theme } = useTheme();
@@ -36,21 +42,50 @@ export default function DashboardScreen({ navigation }) {
     };
 
     useEffect(() => {
-        (async () => {
+        loadLocation();
+    }, []);
+
+    const loadLocation = async () => {
+        // 1. Try to load from cache first for instant UI
+        const cachedLocation = await getData(LOCATION_CACHE_KEY);
+        if (cachedLocation) {
+            console.log("Using cached location");
+            setLocation(cachedLocation);
+        }
+
+        // 2. Fetch fresh location in background
+        try {
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 setErrorMsg('Permission to access location was denied');
                 return;
             }
 
-            let location = await Location.getCurrentPositionAsync({});
-            setLocation(location);
-        })();
-    }, []);
+            // check if lastKnownPosition is faster
+            let lastKnown = await Location.getLastKnownPositionAsync({});
+            if (lastKnown && !cachedLocation) {
+                setLocation(lastKnown);
+            }
+
+            // Get fresh
+            let freshLocation = await Location.getCurrentPositionAsync({});
+            setLocation(freshLocation);
+            storeData(LOCATION_CACHE_KEY, freshLocation);
+            console.log("Updated fresh location");
+
+        } catch (error) {
+            console.log("Error fetching location", error);
+        }
+    };
 
     const onRefresh = () => {
         setRefreshing(true);
         setTimeout(() => setRefreshing(false), 1000);
+    };
+
+    const handleComingSoon = (feature) => {
+        setComingSoonFeature(feature);
+        setModalVisible(true);
     };
 
     // Construct dynamic styles or use inline logic
@@ -75,6 +110,12 @@ export default function DashboardScreen({ navigation }) {
 
     return (
         <View className="flex-1 bg-offWhite">
+            <ComingSoonModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                featureName={comingSoonFeature}
+            />
+
             {/* Header Section */}
             <View className="bg-headerBackground rounded-b-3xl pb-6 pt-12 px-6 shadow-lg">
                 <View className="flex-row justify-between items-center mb-6">
@@ -82,7 +123,9 @@ export default function DashboardScreen({ navigation }) {
                         {/* <Text className="text-white text-sm opacity-80">Assalamualaikum</Text> */}
                         {/* <Text className="text-white text-xl font-bold">Akhi/Ukhti</Text> */}
                     </View>
-
+                    <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+                        <Ionicons name="settings-outline" size={24} color="rgba(255,255,255,0.8)" />
+                    </TouchableOpacity>
                 </View>
 
                 {/* Big Clock */}
@@ -103,15 +146,14 @@ export default function DashboardScreen({ navigation }) {
                 {/* Features Grid */}
                 <View className="flex-row flex-wrap justify-between">
                     <FeatureItem icon="book" label="Quran" onPress={() => navigation.navigate('Quran')} />
-                    <FeatureItem icon="compass" label="Qibla" onPress={() => console.log('Qibla')} />
+                    <FeatureItem icon="compass" label="Qibla" onPress={() => navigation.navigate('Qibla')} />
                     <FeatureItem icon="ellipse" label="Tasbih" onPress={() => navigation.navigate('Tasbih')} />
-                    <FeatureItem icon="calendar" label="Hijri" />
-                    <FeatureItem icon="heart" label="Dua" />
-                    <FeatureItem icon="book" label="Hadith" />
+                    <FeatureItem icon="calendar" label="Hijri" onPress={() => navigation.navigate('Hijri')} />
+                    <FeatureItem icon="heart" label="Dua" onPress={() => navigation.navigate('Dua')} />
+                    <FeatureItem icon="book" label="Hadith" onPress={() => handleComingSoon("Hadith Collection")} />
                 </View>
 
-                {/* Last Read Card */}
-                <TouchableOpacity
+                {/* Last Read Card */}                <TouchableOpacity
                     className="bg-primary rounded-2xl p-4 mt-6 flex-row justify-between items-center shadow-md active:opacity-90"
                     onPress={() => {
                         if (lastRead) {

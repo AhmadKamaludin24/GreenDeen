@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, FlatList, StyleSheet, TextInput } from 'react-native';
+import { View, FlatList, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
 import SurahCard from '../components/SurahCard';
@@ -25,13 +25,13 @@ export default function QuranListScreen({ navigation }) {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.searchBar}>
+        <SafeAreaView className="flex-1 bg-backgroundLight">
+            <View className="p-5 bg-backgroundLight">
+                <View className="flex-row items-center bg-white px-4 py-2.5 rounded-3xl border border-lightGray">
                     <Ionicons name="search" size={20} color={COLORS.gray} style={{ marginRight: 10 }} />
                     <TextInput
                         placeholder="Search Surah..."
-                        style={styles.input}
+                        className="flex-1 text-base"
                         value={search}
                         onChangeText={handleSearch}
                     />
@@ -47,38 +47,9 @@ export default function QuranListScreen({ navigation }) {
                         onPress={() => navigation.navigate('SurahDetail', { surahNumber: item.number })}
                     />
                 )}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
                 showsVerticalScrollIndicator={false}
             />
         </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.backgroundLight,
-    },
-    header: {
-        padding: 20,
-        backgroundColor: COLORS.backgroundLight,
-    },
-    searchBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.white,
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderRadius: 25,
-        borderColor: COLORS.lightGray,
-        borderWidth: 1,
-    },
-    input: {
-        flex: 1,
-        fontSize: 16,
-    },
-    listContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-    }
-});

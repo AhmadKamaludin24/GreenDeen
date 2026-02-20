@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import { useFonts } from 'expo-font';
@@ -16,11 +19,19 @@ import QuranListScreen from './screens/QuranListScreen';
 import SurahDetailScreen from './screens/SurahDetailScreen';
 import TasbihScreen from './screens/TasbihScreen';
 import QiblaScreen from './screens/QiblaScreen';
+import DuaScreen from './screens/DuaScreen';
+import HijriScreen from './screens/HijriScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import AboutScreen from './screens/AboutScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -46,8 +57,8 @@ function MainTabs() {
           backgroundColor: COLORS.white,
           borderTopWidth: 0,
           elevation: 5,
-          height: 60,
-          paddingBottom: 10,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
         }
       })}
     >
@@ -83,13 +94,19 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Main" component={MainTabs} />
-          <Stack.Screen name="SurahDetail" component={SurahDetailScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <StatusBar style="light" />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Main" component={MainTabs} />
+            <Stack.Screen name="SurahDetail" component={SurahDetailScreen} />
+            <Stack.Screen name="Dua" component={DuaScreen} />
+            <Stack.Screen name="Hijri" component={HijriScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="About" component={AboutScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
     </ThemeProvider>
   );
 }

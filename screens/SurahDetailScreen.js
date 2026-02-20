@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Platform, StatusBar } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/theme';
 import VerseCard from '../components/VerseCard';
 import { Ionicons } from '@expo/vector-icons';
 import quranData from '../data/quran/index'; // The generated index
-import { storeData, getData, BOOKMARKS_KEY, LAST_READ_KEY } from '../utils/storage';
+import { storeData, LAST_READ_KEY } from '../utils/storage';
+import { StatusBar } from 'expo-status-bar';
 
 export default function SurahDetailScreen({ route, navigation }) {
     const insets = useSafeAreaInsets();
@@ -19,18 +20,15 @@ export default function SurahDetailScreen({ route, navigation }) {
 
     const loadSurah = async () => {
         try {
-            // Using the map we generated
             const rawData = quranData[surahNumber.toString()];
             if (rawData) {
-                // The JSON structure is nested: { "1": { ... } }
                 const surahContent = rawData[surahNumber.toString()];
                 setSurah(surahContent);
 
-                // Save as Last Read
                 storeData(LAST_READ_KEY, {
                     surahNumber,
                     surahName: surahContent.name_latin,
-                    ayahNumber: 1, // Default to 1 for now, or track scroll later
+                    ayahNumber: 1,
                     timestamp: new Date().toISOString()
                 });
             } else {
@@ -44,20 +42,17 @@ export default function SurahDetailScreen({ route, navigation }) {
     };
 
     const handleBookmark = async (ayahNumber) => {
-        // Implement booking logic
         alert(`Bookmarked Ayah ${ayahNumber}`);
     };
 
     if (loading) {
-        return <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>;
+        return <View className="flex-1 justify-center items-center"><ActivityIndicator color={COLORS.primary} /></View>;
     }
 
     if (!surah) {
-        return <View style={styles.center}><Text>Error loading Surah</Text></View>;
+        return <View className="flex-1 justify-center items-center"><Text>Error loading Surah</Text></View>;
     }
 
-    // Transform data for FlatList
-    // Structure: { text: { "1": "..." }, translations: { id: { text: { "1": "..." } } } }
     const verses = [];
     const totalAyahs = surah.number_of_ayah;
     const arabicText = surah.text;
@@ -72,15 +67,16 @@ export default function SurahDetailScreen({ route, navigation }) {
     }
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
-            <View style={styles.header}>
+        <View className="flex-1 bg-backgroundLight" style={{ paddingTop: insets.top }}>
+
+            <View className="flex-row justify-between items-center p-5 bg-white border-b border-lightGray">
                 <Ionicons
                     name="arrow-back"
                     size={24}
                     color={COLORS.primary}
                     onPress={() => navigation.goBack()}
                 />
-                <Text style={styles.headerTitle}>{surah.name_latin}</Text>
+                <Text className="text-lg font-bold text-primary">{surah.name_latin}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -93,43 +89,10 @@ export default function SurahDetailScreen({ route, navigation }) {
                         onBookmark={() => handleBookmark(item.number)}
                     />
                 )}
-                contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 20 }]}
-                style={styles.list}
+                contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 20, flexGrow: 1 }}
+                style={{ flex: 1 }}
                 showsVerticalScrollIndicator={true}
             />
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.backgroundLight,
-    },
-    center: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: COLORS.white,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.lightGray,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: COLORS.primary,
-    },
-    listContent: {
-        padding: 20,
-        flexGrow: 1,
-    },
-    list: {
-        flex: 1,
-    }
-});
